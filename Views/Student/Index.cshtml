@@ -1,0 +1,273 @@
+@{
+    ViewBag.Title = "Student Home";
+    var studentWithSupervisor = ViewBag.StudentWithSupervisor;
+    var proposals = ViewBag.Proposals;
+    var allDenied = true;
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-8">
+            @*Student Info Section*@
+            @*Avartar*@
+            
+            <div class="card mt-4">
+              
+                <div class="card-body">
+                    <div class="">
+                        <img src="https://via.placeholder.com/150" class="rounded-circle" alt="Student Avatar">
+                    </div>
+                    <h5 class="card-title mt-2">@studentWithSupervisor?.StudentName</h5>
+                    <p class="card-text">@studentWithSupervisor?.StudentEmail</p>
+                </div>
+            </div>
+
+            
+
+            <!-- Supervisor Info Section -->
+            <div class="mt-4">
+                <div class="alert @((studentWithSupervisor?.HasSupervisor == true) ? "alert-success" : "alert-warning")" role="alert">
+                    @if (studentWithSupervisor?.HasSupervisor == true)
+                    {   
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <strong>Good news!</strong> Your supervisor has been assigned.
+                        </div>
+                        <p class="mb-0">Supervisor: <span class="text-primary fw-bold">@studentWithSupervisor.SupervisorName</span></p>
+                    }
+                    else
+                    {   
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div>
+                            <strong>Important:</strong> You do not have a supervisor assigned yet.
+                        </div>
+                        <p class="mb-0">Please contact your department for assistance.</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Additional Action Section -->
+            @* <div class="mt-4 d-flex justify-content-between">
+                @if (studentWithSupervisor.HasSupervisor == true)
+                {
+                    <a href="/Student/ViewSupervisor" class="btn btn-primary btn-lg">View Supervisor</a>
+                }
+                else
+                {
+                    <a href="/Student/RequestSupervisor" class="btn btn-primary btn-lg">Request Supervisor</a>
+                }
+            </div> *@
+
+
+            <!-- Proposal Section -->
+            <div class="mt-4">
+                <h4>Your Proposals</h4>
+                @if (proposals.Count > 0)
+                {
+                    <p>View the status of your proposals here.</p>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Title</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (proposals != null)
+                            {
+                                foreach (var proposal in proposals)
+                                {
+                                    <tr>
+                                        <td>@proposal.ProposalName</td>
+                                        <td>
+                                            @if (proposal.StatusId == 2)
+                                            {
+                                                <span class="badge bg-success ">Accepted</span>
+                                            }
+                                            else if (proposal.StatusId == 1)
+                                            {
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">Denied</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <button 
+                                                class="btn btn-primary btn-sm" 
+                                                data-bs-target="#proposalModal" 
+                                                data-bs-toggle="modal" 
+                                                value="@proposal.ProposalFile" onclick="loadProposalView(this.value)">
+                                                View
+                                            </button>
+
+
+                                            
+                                        </td>
+                                        
+                                    </tr>
+                                }
+                            }
+                            else{
+                                <tr>
+                                    <td colspan="3">No proposals found.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p>You have not submitted any proposals yet.</p>
+                }
+                
+            </div>
+
+            @*If all proposal status are denied and proposals are empty show a button to upload a proposal*@
+            @if (proposals != null)
+            {
+                foreach (var proposal in proposals)
+                {
+                    if (proposal.StatusId != 3)
+                    {
+                        allDenied = false;
+                    }
+                }
+
+                if (allDenied)
+                {
+                    @*check if student has been assigned a supervisor*@
+                    if (studentWithSupervisor?.HasSupervisor == true)
+                    {
+                        <!-- Button trigger modal -->
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                            Upload Proposal
+                        </button>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            You need to have a supervisor assigned before you can submit a proposal.
+                        </div>
+                    }
+                }
+            }
+            else{
+                @*check if student has been assigned a supervisor*@
+                if (studentWithSupervisor?.HasSupervisor == true)
+                {
+                    <!-- Button trigger modal -->
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                        Upload Proposal
+                    </button>
+                }
+                else
+                {
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        You need to have a supervisor assigned before you can submit a proposal.
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Upload a Proposal</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form asp-action="UploadProposal" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="proposalTitle" class="form-label">Proposal Title</label>
+                <input required type="text" name="proposalName" class="form-control" id="proposalTitle">
+                <div id="proposalTitleHelp" class="form-text">Enter a title for your proposal.</div>
+
+                <label for="proposalFile" class="form-label
+                ">Upload Proposal</label>
+                <input required class="form-control" name="proposalFile" type="file" id="proposalFile">
+                <div id="proposalFileHelp" class="form-text">Upload your proposal file.</div>
+
+                <button type="submit" class="btn btn-primary mt-3">Submit</button>
+
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="proposalModal" tabindex="-1" aria-labelledby="proposalModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="proposalModalLabel">Proposal Title</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="proposalView">
+         @*View pdf file here*@
+            
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+
+   
+</div>
+
+
+
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .card {
+        border-radius: 12px;
+    }
+    .btn-lg {
+        border-radius: 8px;
+    }
+</style>
+<script type="module">
+    import pdfjsDist from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.124/+esm'
+
+    function loadProposalView(filePath) {
+        console.log(filePath);
+        const proposalView = document.getElementById('proposalView');
+        if (proposalView) {
+            pdfjsDist.getDocument(filePath).promise.then(pdf => {
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    pdf.getPage(i).then(page => {
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        const viewport = page.getViewport({ scale: 1.5 });
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        page.render({
+                            canvasContext: context,
+                            viewport: viewport
+                        });
+                        proposalView.appendChild(canvas);
+                    });
+                }
+            });
+            
+        }
+    }
+</script>

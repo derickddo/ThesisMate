@@ -1,0 +1,151 @@
+@{
+    var students = ViewBag.Students;
+    var supervisors = ViewBag.Supervisors;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOD Dashboard - ThesisMate</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .dashboard-header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+        }
+        .table thead {
+            background-color: #007bff;
+            color: white;
+        }
+        .modal-header {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="dashboard-header mb-4">
+            <h1>Welcome, Head of Department</h1>
+        </div>
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h4 class="card-title mb-3">Assign Supervisors to Students</h4>
+                <p class="text-muted">You can assign or remove supervisors for each student below.</p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h4 class="card-title mb-3">Students</h4>
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">Student Name</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Supervisor</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (students != null)
+                        {
+                            foreach (var student in students)
+                            {
+                                <tr>
+                                    <td>@student.StudentName</td>
+                                    <td>@student.StudentEmail</td>
+                                    <td>
+                                        @if (student.HasSupervisor)
+                                        {
+                                            @student.SupervisorName
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">No Supervisor Assigned</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (student.HasSupervisor)
+                                        {
+                                            <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#removeSupervisorModal" 
+                                                onclick="document.querySelector('#removeSupervisorModal input[name=studentId]').value = '@student.StudentId'">
+                                                Remove Supervisor
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#assignSupervisorModal" 
+                                                onclick="document.querySelector('#assignSupervisorModal input[name=studentId]').value = '@student.StudentId'">
+                                                Assign Supervisor
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Assigning Supervisor -->
+    <div class="modal fade" id="assignSupervisorModal" tabindex="-1" aria-labelledby="assignSupervisorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignSupervisorModalLabel">Assign Supervisor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form asp-action="AssignSupervisor">
+                        <div class="mb-3">
+                            <label for="supervisorSelect" class="form-label">Select Supervisor</label>
+                            <select name="supervisor" class="form-select" id="supervisorSelect" required>
+                                @if (supervisors != null)
+                                {
+                                    foreach (var supervisor in supervisors)
+                                    {
+                                        <option value="@supervisor.UserId">@supervisor.FirstName @supervisor.LastName</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <input type="hidden" name="studentId" value="" />
+                        <button type="submit" class="btn btn-primary">Assign</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Removing Supervisor -->
+    <div class="modal fade" id="removeSupervisorModal" tabindex="-1" aria-labelledby="removeSupervisorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="removeSupervisorModalLabel">Remove Supervisor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to remove the supervisor from this student?</p>
+                    <form asp-action="RemoveSupervisor">
+                        <input type="hidden" name="studentId" value="" />
+                        <button type="submit" class="btn btn-danger">Remove</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

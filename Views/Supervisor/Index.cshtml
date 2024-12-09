@@ -1,0 +1,187 @@
+@{
+    ViewBag.Title = "Supervisor";
+    var students = ViewBag.Students;
+    var studentWithProposals = ViewBag.StudentWithProposals;
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="text-center">
+                <h1 class="mb-3">Welcome, Supervisor</h1>
+                <p class="text-muted">Manage your students and proposals efficiently.</p>
+            </div>
+
+            <!-- Students Section -->
+            <div class="mt-5">
+                <h4 class="text-primary">Your Students</h4>
+                <p class="text-muted">Below is a list of students assigned to you.</p>
+                <table class="table table-hover align-middle">
+                    <thead class="table-primary">
+                        <tr>
+                            <th scope="col">Student Name</th>
+                            <th scope="col">Email</th>
+                            <th scope="col" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (students?.Count > 0)
+                        {
+                            foreach (var student in students)
+                            {
+                                <tr>
+                                    <td>@student.FirstName @student.LastName</td>
+                                    <td>@student.Email</td>
+                                    <td class="text-center">
+                                        <a href="#" class="btn btn-outline-primary btn-sm" title="View Profile">
+                                            <i class="bi bi-person-lines-fill"></i> View Profile
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">No students assigned yet.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Proposals Section -->
+            <div class="mt-5">
+                <h4 class="text-primary">Student Proposals</h4>
+                <p class="text-muted">Review and respond to proposals submitted by your students.</p>
+                <table class="table table-hover align-middle">
+                    <thead class="table-primary">
+                        <tr>
+                            <th scope="col">Student Name</th>
+                            <th scope="col">Proposal Title</th>
+                            <th scope="col" class="text-center">Status</th>
+                            <th scope="col" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (studentWithProposals?.Count > 0)
+                        {
+                            foreach (var student in studentWithProposals)
+                            {
+                                foreach (var proposal in student.Proposals)
+                                {
+                                    <tr>
+                                        <td>@student.StudentName</td>
+                                        <td>@proposal.ProposalName</td>
+                                        <td class="text-center">
+                                            <span class="badge 
+                                                @(proposal.Status == "Pending" ? "bg-warning text-dark" : 
+                                                proposal.Status == "Accepted" ? "bg-success" : "bg-danger")">
+                                                @proposal.Status
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            @if (proposal.Status == "Pending")
+                                            {
+                                                <div class="btn-group">
+                                                    <button class="btn btn-success btn-sm" title="Accept Proposal" data-target="#acceptProposalModal" data-toggle="modal">
+                                                        <i class="bi bi-check-circle"></i> Accept
+                                                    </button>
+                                                    <a href="#" class="btn btn-danger btn-sm" title="Reject Proposal">
+                                                        <i class="bi bi-x-circle"></i> Reject
+                                                    </a>
+                                                </div>
+                                            }
+                                            
+                                            <!-- Button trigger modal -->
+                                            <button type="button" class="btn btn-outline-primary"
+                                            value="@proposal.ProposalFile" 
+                                            data-bs-toggle="modal" data-bs-target="#viewProposalModal" onclick="viewProposal(this.value)">
+                                                <i class="bi bi-eye"></i>
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No proposals submitted yet.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--View Proposal Modal-->
+<div class="modal fade" id="viewProposalModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+            <div id="pdf-viewer">
+
+            </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+
+
+    function viewProposal(proposalFile) {
+        var pdfViewer = document.getElementById('pdf-viewer');
+        var pdfFile = '@Url.Content("~/")' + proposalFile;
+
+        console.log(pdfFile);
+        var pdfjsLib = window['pdfjs-dist/build/pdf'];
+
+        
+
+        pdfjsLib.getDocument(pdfFile).promise.then(function (pdfDoc_) {
+            pdfDoc = pdfDoc_;
+            document.getElementById('page_count').textContent = pdfDoc.numPages;
+
+            for (var num = 1; num <= pdfDoc.numPages; num++) {
+                pdfDoc.getPage(num).then(function (page) {
+                    var canvas = document.createElement("canvas");
+                    pdfViewer.appendChild(canvas);
+                    var context = canvas.getContext('2d');
+                    var viewport = page.getViewport({ scale: 1.5 });
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    page.render({
+                        canvasContext: context,
+                        viewport: viewport
+                    });
+                });
+            }
+        })
+        
+    }
+</script>
+
+
+
+<!-- Bootstrap Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+
+
